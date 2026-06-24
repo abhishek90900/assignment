@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chanakya Store | Product Browser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-indigo-700 p-4 shadow-lg text-white font-bold text-xl text-center">
+        I Store
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-6">
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Category:</label>
+            <select id="category-filter" class="p-2 border rounded shadow-sm w-full">
+                <option value="All">All Categories</option>
+                <option value="Category 1">Category 1</option>
+                <option value="Category 2">Category 2</option>
+                <option value="Category 3">Category 3</option>
+            </select>
+        </div>
+
+        <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+        <button id="load-more" class="mt-8 w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-bold">
+            Load More Products
+        </button>
+    </main>
+
+    <script>
+        let lastCursor = null;
+        let currentCategory = 'All';
+        const list = document.getElementById('product-list');
+
+        async function fetchProducts(reset = false) {
+            if (reset) {
+                list.innerHTML = '';
+                lastCursor = null;
+            }
+
+            // Construct URL
+            let url = `/products?category=${encodeURIComponent(currentCategory)}`;
+            if (lastCursor) {
+                url += `&cursor=${encodeURIComponent(lastCursor)}`;
+            }
+            
+            try {
+                const res = await fetch(url);
+                const products = await res.json();
+
+                if (products.length === 0) {
+                    alert("No more products available!");
+                    return;
+                }
+
+                // Append products to the UI
+                products.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-white p-4 rounded shadow border border-gray-100 hover:shadow-md transition';
+                    div.innerHTML = `
+                        <h2 class="font-bold text-gray-800">${p.name}</h2>
+                        <p class="text-sm text-indigo-600 font-semibold">${p.category}</p>
+                        <p class="text-gray-500 text-xs mt-2">Added: ${new Date(p.created_at).toLocaleString()}</p>
+                    `;
+                    list.appendChild(div);
+                    lastCursor = p.created_at; // Update cursor to the last product's timestamp
+                });
+            } catch (err) {
+                console.error("Fetch Error:", err);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('category-filter').onchange = (e) => {
+            currentCategory = e.target.value;
+            fetchProducts(true); // Reset list on filter change
+        };
+
+        document.getElementById('load-more').onclick = () => fetchProducts();
+        
+        // Initial load
+        fetchProducts();
+    </script>
+</body>
+</html>
